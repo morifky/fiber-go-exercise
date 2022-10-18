@@ -1,13 +1,15 @@
 package handler
 
-import "gorm.io/gorm"
+import (
+	"fiber-go-exercise/pkg/service"
+)
 
 type Handler struct {
-	db *gorm.DB
+	userService *service.UserService
 }
 
-func New(db *gorm.DB) *Handler {
+func New(userService *service.UserService) *Handler {
 	return &Handler{
-		db: db,
+		userService: userService,
 	}
 }

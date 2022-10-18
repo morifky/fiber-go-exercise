@@ -1,8 +1,6 @@
 package utils
 
 import (
-	"net/http"
-
 	"github.com/gofiber/fiber"
 )
 
@@ -14,7 +12,7 @@ func WriteResponse(statusCode int, data interface{}) *fiber.Map {
 	}
 }
 
-func WriteError(w http.ResponseWriter, statusCode int, err error) *fiber.Map {
+func WriteError(statusCode int, err error) *fiber.Map {
 	return &fiber.Map{
 		"statusCode": statusCode,
 		"data":       nil,

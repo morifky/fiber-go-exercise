@@ -4,7 +4,9 @@ import (
 	"fiber-go-exercise/pkg/config"
 	db "fiber-go-exercise/pkg/database"
 	"fiber-go-exercise/pkg/handler"
+	"fiber-go-exercise/pkg/models"
 	"fiber-go-exercise/pkg/router"
+	"fiber-go-exercise/pkg/service"
 	"fiber-go-exercise/utils"
 	"log"
 
@@ -26,13 +28,13 @@ func main() {
 		log.Fatal("Unable connect to database, error: ", err)
 	}
 	db.AutoMigrateDB(newDB)
-
-	h := handler.New(newDB)
-
-	app := fiber.New(fiber.Config{
-		EnablePrintRoutes: true,
-	})
+	app := fiber.New()
 	app.Use(cors.New())
+
+	repo := models.New(newDB)
+	svc := service.New(repo)
+
+	h := handler.New(svc)
 
 	router.SetupRoutes(h, app)
 
