@@ -25,9 +25,9 @@ func New(DbUser, DbPassword, DbPort, DbHost, DbName string) (*gorm.DB, error) {
 		},
 	)
 
-	DBURL := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable password=%s", DbHost, DbPort, DbUser, DbName, DbPassword)
+	dsn := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable password=%s", DbHost, DbPort, DbUser, DbName, DbPassword)
 
-	postgresDB, err := gorm.Open(postgres.Open(DBURL), &gorm.Config{
+	postgresDB, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: customLogger,
 	})
 	if err != nil {
@@ -43,5 +43,6 @@ func New(DbUser, DbPassword, DbPort, DbHost, DbName string) (*gorm.DB, error) {
 func AutoMigrateDB(db *gorm.DB) {
 	db.AutoMigrate(
 		&models.User{},
+		&models.Post{},
 	)
 }

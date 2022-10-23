@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fiber-go-exercise/pkg/models"
 	"fiber-go-exercise/utils"
+	"fiber-go-exercise/utils/token"
 	"net/http"
 	"strconv"
 
@@ -11,8 +12,8 @@ import (
 	"go.uber.org/zap"
 )
 
-func (h *Handler) GetAllUsers(c *fiber.Ctx) error {
-	users, err := h.userService.FindAllUsers()
+func (h *Handler) GetAllPosts(c *fiber.Ctx) error {
+	posts, err := h.postService.FindAllPosts()
 
 	if err != nil {
 		zap.S().Warn("Unable to find data, error: ", err)
@@ -20,27 +21,27 @@ func (h *Handler) GetAllUsers(c *fiber.Ctx) error {
 		return c.JSON(utils.WriteError(500, err))
 	}
 
-	return c.JSON(utils.WriteResponse(200, users))
+	return c.JSON(utils.WriteResponse(200, posts))
 }
 
-func (h *Handler) GetUserByID(c *fiber.Ctx) error {
+func (h *Handler) GetPostByID(c *fiber.Ctx) error {
 	uid, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		return c.JSON(utils.WriteError(400, errors.New("unable to parse id from request param")))
 	}
-	u, err := h.userService.FindUserByID(uint32(uid))
+	p, err := h.postService.FindPostByID(uint32(uid))
 	if err != nil {
 		zap.S().Warn("Unable to find data, error: ", err)
 		c.Status(http.StatusInternalServerError)
 		return c.JSON(utils.WriteError(500, err))
 	}
 
-	return c.JSON(utils.WriteResponse(200, u))
+	return c.JSON(utils.WriteResponse(200, p))
 }
 
-func (h *Handler) AddUser(c *fiber.Ctx) error {
-	var req userCreateRequest
+func (h *Handler) AddPost(c *fiber.Ctx) error {
+	var req postCreateRequest
 
 	err := c.BodyParser(&req)
 
@@ -48,18 +49,25 @@ func (h *Handler) AddUser(c *fiber.Ctx) error {
 		c.Status(http.StatusBadRequest)
 		return c.JSON(utils.WriteError(400, err))
 	}
-	if req.Username == "" || req.Email == "" {
+	if req.Title == "" || req.Content == "" {
 		c.Status(http.StatusBadRequest)
-		return c.JSON(utils.WriteError(400, errors.New("email or username must not empty")))
+		return c.JSON(utils.WriteError(400, errors.New("title or content must not empty")))
 	}
 
-	user := models.User{
-		Username: req.Username,
-		Email:    req.Email,
-		Password: req.Password,
+	userID, err := token.New(h.cfg.JWTSecret).ExtractTokenID(token.ExtractTokenFromHeader(c))
+
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		return c.JSON(utils.WriteError(500, err))
 	}
 
-	err = h.userService.CreateUser(&user)
+	post := models.Post{
+		Title:    req.Title,
+		Content:  req.Content,
+		AuthorID: userID,
+	}
+
+	err = h.postService.CreatePost(&post)
 
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
@@ -68,14 +76,14 @@ func (h *Handler) AddUser(c *fiber.Ctx) error {
 	return c.JSON(utils.WriteResponse(201, nil))
 }
 
-func (h *Handler) RemoveUser(c *fiber.Ctx) error {
+func (h *Handler) RemovePost(c *fiber.Ctx) error {
 	uid, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		return c.JSON(utils.WriteError(400, errors.New("unable to parse id from request param")))
 	}
 
-	err = h.userService.DeleteUser(uint32(uid))
+	err = h.postService.DeletePost(uint32(uid))
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		return c.JSON(utils.WriteError(500, err))
@@ -83,8 +91,8 @@ func (h *Handler) RemoveUser(c *fiber.Ctx) error {
 	return c.JSON(utils.WriteResponse(204, nil))
 }
 
-func (h *Handler) UpdateUser(c *fiber.Ctx) error {
-	var req userUpdateRequest
+func (h *Handler) UpdatePost(c *fiber.Ctx) error {
+	var req postUpdateRequest
 
 	uid, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {
@@ -98,16 +106,23 @@ func (h *Handler) UpdateUser(c *fiber.Ctx) error {
 		return c.JSON(utils.WriteError(400, err))
 	}
 
-	user := models.User{
-		Username: req.Username,
-		Email:    req.Email,
-		Password: req.Password,
-	}
+	userID, err := token.New(h.cfg.JWTSecret).ExtractTokenID(token.ExtractTokenFromHeader(c))
 
-	updatedUser, err := h.userService.UpdateUser(uint32(uid), &user)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		return c.JSON(utils.WriteError(500, err))
 	}
-	return c.JSON(utils.WriteResponse(204, updatedUser))
+
+	post := models.Post{
+		Title:    req.Title,
+		Content:  req.Content,
+		AuthorID: userID,
+	}
+
+	updatedPost, err := h.postService.UpdatePost(uint32(uid), &post)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		return c.JSON(utils.WriteError(500, err))
+	}
+	return c.JSON(utils.WriteResponse(204, updatedPost))
 }

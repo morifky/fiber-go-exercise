@@ -6,6 +6,8 @@ require (
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/gofiber/fiber v1.14.6
 	github.com/gofiber/fiber/v2 v2.38.1
+	github.com/gofiber/jwt/v3 v3.3.2
+	github.com/golang-jwt/jwt/v4 v4.4.2
 	go.uber.org/zap v1.23.0
 	golang.org/x/crypto v0.0.0-20221012134737-56aed061732a
 	gorm.io/driver/postgres v1.4.4

@@ -23,18 +23,33 @@ func main() {
 		log.Fatal("Unable to parse envar, error: ", err)
 	}
 
-	newDB, err := db.New(cfg.DBUsername, cfg.DBPassword, cfg.DBPort, cfg.DBHost, cfg.DBName)
+	newDB, err := db.New(
+		cfg.DBUsername,
+		cfg.DBPassword,
+		cfg.DBPort,
+		cfg.DBHost,
+		cfg.DBName,
+	)
+
 	if err != nil {
 		log.Fatal("Unable connect to database, error: ", err)
 	}
+
 	db.AutoMigrateDB(newDB)
 	app := fiber.New()
 	app.Use(cors.New())
 
-	repo := models.New(newDB)
-	svc := service.New(repo)
+	repo := models.NewRepository(newDB)
 
-	h := handler.New(svc)
+	svc := service.New(
+		repo.GetUserRepository(),
+		repo.GetPostRepository(),
+	)
+	h := handler.New(
+		svc.GetUserService(),
+		svc.GetPostService(),
+		cfg,
+	)
 
 	router.SetupRoutes(h, app)
 

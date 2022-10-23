@@ -7,6 +7,7 @@ type Config struct {
 	DBPassword string `env:"DB_PASSWORD" envDefault:"1"`
 	DBName     string `env:"DB_NAME" envDefault:"1"`
 	HTTPPort   string `env:"PORT" envDefault:"8080"`
+	JWTSecret  string `env:"JWT_SECRET" envDefault:"secret"`
 }
 
 func InitConfig() *Config {

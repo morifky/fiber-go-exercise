@@ -8,21 +8,15 @@ import (
 )
 
 type UserService struct {
-	repository *models.UserRepository
+	userRepository *models.UserRepository
 }
 
-func New(repository *models.UserRepository) *UserService {
-	return &UserService{
-		repository: repository,
-	}
+func (us *UserService) FindAllUsers() (*[]models.User, error) {
+	return us.userRepository.FindAll()
 }
 
-func (s *UserService) FindAllUsers() (*[]models.User, error) {
-	return s.repository.FindAll()
-}
-
-func (s *UserService) FindUserByEmail(email string) (*models.User, error) {
-	u, err := s.repository.FindByEmail(email)
+func (us *UserService) FindUserByEmail(email string) (*models.User, error) {
+	u, err := us.userRepository.FindByEmail(email)
 	if err != nil {
 		zap.S().Warn("Unable to find user, error: ", err)
 		return nil, err
@@ -30,8 +24,8 @@ func (s *UserService) FindUserByEmail(email string) (*models.User, error) {
 	return u, nil
 }
 
-func (s *UserService) FindUserByID(id uint32) (*models.User, error) {
-	u, err := s.repository.FindOne(id)
+func (us *UserService) FindUserByID(id uint32) (*models.User, error) {
+	u, err := us.userRepository.FindOne(id)
 	if err != nil {
 		zap.S().Warn("Unable to find user, error: ", err)
 		return nil, err
@@ -39,23 +33,23 @@ func (s *UserService) FindUserByID(id uint32) (*models.User, error) {
 	return u, nil
 }
 
-func (s *UserService) CreateUser(u *models.User) error {
+func (us *UserService) CreateUser(u *models.User) error {
 	var err error
 	u.Password, err = utils.HashPassword(u.Password)
 
 	if err != nil {
 		zap.S().Warn("Unable to hash password, error: ", err)
 	}
-	_, err = s.repository.Save(u)
+	err = us.userRepository.Save(u)
 	if err != nil {
-		zap.S().Warn("Unable to save user, error: ", err)
+		zap.S().Warn("Unable to create a new user, error: ", err)
 		return err
 	}
 	return nil
 }
 
-func (s *UserService) DeleteUser(id uint32) error {
-	_, err := s.repository.DeleteOne(id)
+func (us *UserService) DeleteUser(id uint32) error {
+	_, err := us.userRepository.DeleteOne(id)
 	if err != nil {
 		zap.S().Warn("Unable to delete user, error: ", err)
 		return err
@@ -63,17 +57,24 @@ func (s *UserService) DeleteUser(id uint32) error {
 	return nil
 }
 
-func (s *UserService) UpdateUser(id uint32, u *models.User) error {
+func (us *UserService) UpdateUser(id uint32, u *models.User) (*models.User, error) {
 	var err error
 	u.Password, err = utils.HashPassword(u.Password)
 	if err != nil {
 		zap.S().Warn("Unable to hash password, error: ", err)
+		return nil, err
 	}
-	_, err = s.repository.UpdateOne(id, u)
+	err = us.userRepository.UpdateOne(id, u)
 
 	if err != nil {
 		zap.S().Warn("Unable to update user, error: ", err)
-		return err
+		return nil, err
 	}
-	return nil
+
+	user, err := us.userRepository.FindOne(id)
+	if err != nil {
+		zap.S().Warn("Unable to find updated user data, error: ", err)
+		return nil, err
+	}
+	return user, nil
 }
